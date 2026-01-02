@@ -5,3 +5,6 @@ xgboost
 catboost
 pytest
 joblib
+fastapi
+uvicorn
+gunicorn
