@@ -7,6 +7,7 @@ app = FastAPI(title="Cars24 Price Prediction API")
 
 MODEL_PATH = "models/car_price_model.pkl"
 
+
 def load_model():
     if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError(
@@ -14,19 +15,8 @@ def load_model():
         )
     return joblib.load(MODEL_PATH)
 
+
 model = load_model()
-
-def preprocess(df: pd.DataFrame):
-    # Extract Brand + Model (same as training)
-    if "Car Name" in df.columns:
-        df["Brand"] = df["Car Name"].str.split().str[0]
-        df["Model"] = df["Car Name"].str.split().str[1:3].str.join(" ")
-        df = df.drop(columns=["Car Name"])
-
-    # One-hot encode (same logic as training)
-    df = pd.get_dummies(df, drop_first=True, dtype=int)
-
-    return df
 
 
 @app.get("/")
@@ -35,18 +25,25 @@ def home():
 
 
 @app.post("/predict")
-def predict(data: list):
+def predict(data: dict):
     """
-    Accepts a list of dictionaries (JSON),
-    converts to DataFrame, preprocesses, predicts,
-    returns list with prediction values added.
+    Accepts ONE JSON car record
+    Example:
+    {
+      "Year": 2020,
+      "Distance": 35000,
+      "Owner": 1,
+      "Fuel": "PETROL",
+      "Location": "KA-05",
+      "Drive": "Manual",
+      "Type": "SUV",
+      "Brand": "Hyundai",
+      "Model": "Creta"
+    }
     """
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame([data])
 
-    X = preprocess(df)
-    preds = model.predict(X)
+    preds = model.predict(df)
 
-    df["Predicted_Price"] = preds.tolist()
-
-    return df.to_dict(orient="records")
+    return {"Predicted_Price": float(preds[0])}
