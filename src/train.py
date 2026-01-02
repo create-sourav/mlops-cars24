@@ -1,54 +1,67 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBRegressor
 import joblib
 import os
 
-# -------- PATHS --------
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+RAW_PATH = "data/processed/cars24_clean.csv"
+MODEL_PATH = "models/car_price_model.pkl"
 
-DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "cars24_clean.csv")
-MODEL_PATH = os.path.join(BASE_DIR, "models", "car_price_model.pkl")
+print("\n📥 Loading data:", RAW_PATH)
+df = pd.read_csv(RAW_PATH)
 
+# -----------------------------
+# 1️⃣  ENSURE ONLY RAW FEATURES
+# -----------------------------
+features = [
+    "Year", "Distance", "Owner",
+    "Fuel", "Location", "Drive", "Type",
+    "Brand", "Model"
+]
 
+target = "Price"
 
-def load_data():
-    df = pd.read_csv(DATA_PATH)
+df = df[features + [target]]
 
-    X = df.drop("Price", axis=1)
-    y = df["Price"]
+X = df[features]
+y = df[target]
 
-    # One-hot encode categorical columns
-    X = pd.get_dummies(X, drop_first=True, dtype=int)
+numeric = ["Year", "Distance", "Owner"]
+categorical = ["Fuel", "Location", "Drive", "Type", "Brand", "Model"]
 
-    return train_test_split(X, y, test_size=0.2, random_state=42)
+preprocess = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numeric),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical)
+    ]
+)
 
+model = XGBRegressor(
+    n_estimators=200,
+    max_depth=6,
+    objective="reg:squarederror",
+    random_state=42
+)
 
-def train_model(x_train, y_train):
+pipeline = Pipeline(
+    steps=[
+        ("preprocess", preprocess),
+        ("model", model),
+    ]
+)
 
-    pipe = Pipeline([
-        ("scaler", StandardScaler()),
-        ("model", XGBRegressor(
-            n_estimators=200,
-            max_depth=6,
-            objective="reg:squarederror",
-            random_state=42
-        ))
-    ])
+print("🚀 Training model...")
+pipeline.fit(X, y)
 
-    pipe.fit(x_train, y_train)
-    return pipe
+os.makedirs("models", exist_ok=True)
 
+# ALWAYS overwrite
+joblib.dump(pipeline, MODEL_PATH)
 
-def save_model(model):
-    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-    joblib.dump(model, MODEL_PATH)
-    print("Model saved at:", MODEL_PATH)
-
-
-if __name__ == "__main__":
-    x_train, x_test, y_train, y_test = load_data()
-    model = train_model(x_train, y_train)
-    save_model(model)
+print("✔ MODEL SAVED:", os.path.abspath(MODEL_PATH))
+print("\n🔎 MODEL TYPE:", type(pipeline))
+print("🎯 TRAINED ON COLUMNS:", list(X.columns))
+print("\n👍 Training finished.\n")

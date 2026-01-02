@@ -25,3 +25,6 @@ def test_training_pipeline():
     # 4️⃣ Model should be loadable
     loaded = joblib.load(MODEL_PATH)
     assert loaded is not None
+
+
+# run python -m pytest -q in terminal to execute the test now after this 
