@@ -12,7 +12,7 @@ MODEL_PATH = "models/car_price_model.pkl"
 
 
 def load_data(path: str = DATA_PATH):
-    print(f"\n📥 Loading data: {path}")
+    print(f"\n Loading data: {path}")
     df = pd.read_csv(path)
 
     X = df.drop("Price", axis=1)
@@ -43,7 +43,7 @@ def build_pipeline():
 
 
 def train_model(X_train, y_train):
-    print("🚀 Training model...")
+    print("Training model...")
     pipeline = build_pipeline()
     pipeline.fit(X_train, y_train)
     return pipeline
@@ -52,7 +52,7 @@ def train_model(X_train, y_train):
 def save_model(model, path: str = MODEL_PATH):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     joblib.dump(model, path)
-    print(f"✔ MODEL SAVED: {os.path.abspath(path)}")
+    print(f" MODEL SAVED: {os.path.abspath(path)}")
 
 
 def main():
@@ -60,9 +60,9 @@ def main():
     model = train_model(X_train, Y_train)
     save_model(model)
 
-    print("\n🔎 MODEL TYPE:", type(model))
-    print("🎯 TRAINED ON COLUMNS:", model.named_steps["preprocess"].get_feature_names_out())
-    print("\n👍 Training finished.\n")
+    print("\n MODEL TYPE:", type(model))
+    print(" TRAINED ON COLUMNS:", model.named_steps["preprocess"].get_feature_names_out())
+    print("\n Training finished.\n")
 
 
 if __name__ == "__main__":
